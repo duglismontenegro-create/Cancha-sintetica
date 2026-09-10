@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Administrador - Acceso Exclusivo</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { background: #212529; }
+        .form-card { border-top: 4px solid var(--warning); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">⚽ CANCHAS SINTÉTICAS</a>
+        <div>
+            <a href="index.html">Ver canchas (público)</a>
+            <a href="login_cliente.html">Login Cliente</a>
+        </div>
+    </nav>
+
+    <div class="form-card">
+        <h2>🔐 Acceso Administrador</h2>
+        <p style="text-align:center; font-size:0.85rem; color:#664d03; background:#fff3cd; padding:8px; border-radius:6px; margin-bottom:1rem;">
+            Pantalla exclusiva y segura para administradores (tabla 'administradores').<br>
+            Ningún cliente puede acceder al panel.
+        </p>
+
+        <div id="msg"></div>
+
+        <form onsubmit="loginAdmin(event)">
+            <div class="form-group">
+                <label>Email administrador</label>
+                <input type="email" id="email" placeholder="admin@canchas.com" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn" style="background: var(--dark); color:white;">Entrar al Panel Admin</button>
+        </form>
+
+        <div class="link" style="font-size:0.8rem; color:#666;">
+            Demo: admin@canchas.com / Admin123*<br>
+            <small>Si no funciona, genera hash en backend: <code>generate_password_hash('Admin123*')</code> y actualiza la BD</small>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth_admin.js"></script>
+</body>
+</html>

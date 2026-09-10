@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canchas Sintéticas - Reserva Online</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo">⚽ CANCHAS SINTÉTICAS</div>
+        <div id="nav-auth">
+            <!-- Se rellena dinámicamente con JS según sesión -->
+            <a href="login_cliente.html">Iniciar sesión (Cliente)</a>
+            <a href="registro_cliente.html" style="background: var(--primary); padding: 6px 12px; border-radius: 6px;">Registrarse</a>
+            <a href="login_admin.html" style="opacity:0.7; font-size:0.85rem;">Admin</a>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- HERO -->
+        <div class="hero">
+            <h1>Reserva tu cancha en segundos</h1>
+            <p>Fútbol 5, 7, 8 y 11 • Grama sintética profesional • Iluminación LED • ¡Reserva 24/7!</p>
+            <p style="margin-top:0.8rem; font-size:0.85rem; opacity:0.8;">🔒 Debes iniciar sesión como Cliente para poder reservar</p>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="filters">
+            <button class="active" onclick="filtrarCanchas('Todas', this)">Todas</button>
+            <button onclick="filtrarCanchas('Disponible', this)">✅ Disponibles</button>
+            <button onclick="filtrarCanchas('Mantenimiento', this)">🛠️ En Mantenimiento</button>
+            <button onclick="filtrarCanchas('Fútbol 5', this)">Fútbol 5</button>
+            <button onclick="filtrarCanchas('Fútbol 7', this)">Fútbol 7</button>
+            <button onclick="filtrarCanchas('Fútbol 8', this)">Fútbol 8</button>
+            <button onclick="filtrarCanchas('Fútbol 11', this)">Fútbol 11</button>
+        </div>
+        <p id="count-canchas" style="margin-bottom:1rem; color:#666; font-size:0.9rem;"></p>
+
+        <!-- GRID CANCHAS - Se llena con fetch a /api/canchas -->
+        <div id="grid-canchas" class="grid">
+            <!-- Cards generadas por js/canchas.js -->
+        </div>
+
+    </div>
+
+    <!-- MODAL RESERVA -->
+    <div id="modal-reserva" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modal-title">Reservar Cancha</h3>
+            <p id="modal-cancha-nombre" style="font-weight:700; color: var(--primary);"></p>
+            <small id="modal-precio" style="color:#666;"></small>
+
+            <!-- Formulario: fecha, hora_inicio, duración -->
+            <form id="form-reserva" onsubmit="confirmarReserva(event)" style="margin-top:1rem;">
+                <div class="form-group">
+                    <label>📅 Fecha</label>
+                    <input type="date" id="reserva-fecha" required>
+                </div>
+                <div class="form-group">
+                    <label>⏰ Hora de inicio</label>
+                    <input type="time" id="reserva-hora" required>
+                </div>
+                <div class="form-group">
+                    <label>⏳ Duración</label>
+                    <select id="reserva-duracion" required>
+                        <option value="0.5">30 minutos</option>
+                        <option value="1" selected>1 hora</option>
+                        <option value="1.5">1.5 horas</option>
+                        <option value="2">2 horas</option>
+                        <option value="2.5">2.5 horas</option>
+                        <option value="3">3 horas</option>
+                    </select>
+                    <small style="color:#666;">Costo estimado: <b id="costo-estimado">-</b></small>
+                </div>
+
+                <div id="reserva-msg"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="cerrarModalReserva()">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Confirmar Reserva</button>
+                </div>
+            </form>
+
+            <!-- Resumen Post-Reserva (ventana detallada) -->
+            <div id="resumen-reserva" style="display:none;">
+                <!-- Se rellena dinámicamente con instrucciones de pago, tiempo límite llegada, resumen tiempo y costo -->
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        © 2026 Canchas Sintéticas • Sistema de Reservas • <a href="login_admin.html">Acceso Admin</a>
+    </div>
+
+    <!-- SCRIPTS - Orden importante -->
+    <script src="js/config.js"></script>      <!-- 1. Config API_BASE_URL -->
+    <script src="js/auth_cliente.js"></script><!-- 2. Helpers auth -->
+    <script src="js/canchas.js"></script>     <!-- 3. Catálogo -->
+    <script src="js/reserva.js"></script>     <!-- 4. Flujo reserva -->
+</body>
+</html>

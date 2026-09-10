@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrador - Canchas</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">⚽ PANEL ADMIN</div>
+        <div>
+            <span id="admin-info" style="font-size:0.85rem; opacity:0.9;"></span>
+            <a href="index.html">Ver canchas</a>
+            <a href="#" onclick="logoutAdmin()" style="background: var(--danger); padding:6px 10px; border-radius:6px;">Cerrar sesión</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
+            <h1>Panel de Administración</h1>
+            <p>Gestiona estados de canchas (Disponible / Mantenimiento) y visualiza reservas</p>
+            <small>🔒 Acceso exclusivo - Solo tokens con rol 'administrador' pueden consumir /api/admin/*</small>
+        </div>
+
+        <!-- Gestión Canchas -->
+        <h2 style="margin-bottom:1rem;">🏟️ Gestión de Canchas</h2>
+        <div class="table-wrap" style="margin-bottom:2rem;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cancha / Tipo</th>
+                        <th>Precio/hora</th>
+                        <th>Estado actual</th>
+                        <th>Cambiar estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-canchas">
+                    <tr><td colspan="5" style="text-align:center;">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Reservas -->
+        <h2 style="margin-bottom:1rem;">📅 Reservas <small id="count-reservas" style="color:#666; font-weight:400;"></small></h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cancha</th>
+                        <th>Cliente</th>
+                        <th>Fecha / Horario</th>
+                        <th>Costo</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-reservas">
+                    <tr><td colspan="6" style="text-align:center;">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:1.5rem; background:white; padding:1rem; border-radius:8px; font-size:0.85rem; color:#555;">
+            <strong>Endpoints usados por este panel (solo admin):</strong><br>
+            <code>GET /api/admin/canchas</code> • <code>PUT /api/admin/canchas/:id/estado</code> • <code>GET /api/admin/reservas</code><br>
+            Todos validan <code>Authorization: Bearer &lt;token admin&gt;</code> y rechazan tokens de clientes con 403.
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth_admin.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

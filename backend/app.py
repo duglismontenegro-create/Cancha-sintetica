@@ -10,6 +10,9 @@ Estructura de Rutas:
 - GET  /api/canchas/<id>               -> Detalle cancha
 - POST /api/reservas                    -> Crear reserva (OBLIGA login cliente)
 - GET  /api/reservas/mis-reservas      -> Historial cliente
+- PUT  /api/reservas/<id>/estado        -> Cliente confirma SU reserva (bloquea botones)
+- DELETE /api/reservas/<id>             -> Cliente cancela/borra SU reserva (DELETE BD)
+- PUT  /api/admin/canchas/<id>          -> [ADMIN] editar precio/foto/descripcion/nombre
 - GET  /api/admin/reservas             -> [ADMIN] todas las reservas
 - PUT  /api/admin/canchas/<id>/estado  -> [ADMIN] cambiar Disponible/Mantenimiento
 - GET  /api/admin/canchas              -> [ADMIN] listado completo
@@ -27,14 +30,20 @@ from datetime import datetime, timedelta, time
 import re
 
 from config import Config
-from database import get_db_connection, get_cursor_dict
+from database import get_db_connection, get_cursor_dict, ensure_db_compatible
 from auth import generar_token, solo_cliente, solo_admin
+
+# Auto-migración al iniciar (compatibilidad con BD antigua Workbench)
+try:
+    ensure_db_compatible()
+except Exception as e:
+    print(f"[WARN] Migración automática falló: {e}")
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = Config.SECRET_KEY
 
 # CORS: permite que el frontend (Live Server, file://, etc.) consuma la API
-CORS(app, supports_credentials=True, origins="*")
+CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
 
 # ======================================================
 # HELPERS
@@ -296,10 +305,10 @@ def crear_reserva():
 
     try:
         duracion = float(duracion)
-        if duracion not in [0.5, 1, 1.5, 2, 2.5, 3]:
-            # Permitimos 0.5 a 3 horas en pasos de 0.5
-            if duracion <=0 or duracion > 4:
-                return jsonify({"ok": False, "msg": "Duración no válida (0.5 a 4 horas)"}), 400
+        # Permitidos: 0.5 a 4 horas en pasos de 0.5
+        permitidos = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4]
+        if duracion not in permitidos:
+            return jsonify({"ok": False, "msg": "Duración no válida. Permitidas: 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4 horas"}), 400
     except:
         return jsonify({"ok": False, "msg": "Duración debe ser numérica"}), 400
 
@@ -341,11 +350,20 @@ def crear_reserva():
         # Para guardar hora_fin con formato completo
         hora_inicio_db = f"{hora_inicio}:00" if len(hora_inicio.split(':'))==2 else hora_inicio
 
-        # 4. Insertar reserva
-        cursor.execute("""
-            INSERT INTO reservas (cliente_id, cancha_id, fecha, hora_inicio, duracion_horas, hora_fin, costo_total, estado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'Confirmada')
-        """, (cliente_id, cancha_id, fecha, hora_inicio_db, duracion, hora_fin, costo_total))
+        # 4. Insertar reserva (compatible con tu esquema original fecha_hora + nuevo esquema)
+        fecha_hora = f"{fecha} {hora_inicio_db}"
+        # Intenta con fecha_hora (tu BD), si falla sin esa columna usa solo nuevo esquema
+        try:
+            cursor.execute("""
+                INSERT INTO reservas (cliente_id, cancha_id, fecha_hora, fecha, hora_inicio, duracion_horas, hora_fin, costo_total, estado)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Confirmada')
+            """, (cliente_id, cancha_id, fecha_hora, fecha, hora_inicio_db, duracion, hora_fin, costo_total))
+        except Exception:
+            # Fallback si fecha_hora no existe o fecha es NULL
+            cursor.execute("""
+                INSERT INTO reservas (cliente_id, cancha_id, fecha, hora_inicio, duracion_horas, hora_fin, costo_total, estado)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'Confirmada')
+            """, (cliente_id, cancha_id, fecha, hora_inicio_db, duracion, hora_fin, costo_total))
         conn.commit()
         reserva_id = cursor.lastrowid
 
@@ -404,6 +422,76 @@ def mis_reservas():
     finally:
         conn.close()
 
+@app.route("/api/reservas/<int:reserva_id>/estado", methods=["PUT"])
+@solo_cliente
+def cliente_cambiar_estado_reserva(reserva_id):
+    """
+    Cliente cambia estado de SU propia reserva: Confirmada <-> Cancelada
+    Valida ownership (cliente_id del token). Sincroniza directo en BD tabla reservas.
+    Si intenta confirmar una reserva Cancelada, verifica que no haya solapamiento.
+    """
+    data = request.get_json() or {}
+    nuevo_estado = data.get("estado")
+    if nuevo_estado not in ["Confirmada", "Cancelada"]:
+        return jsonify({"ok": False, "msg": "Estado debe ser 'Confirmada' o 'Cancelada'"}), 400
+
+    cliente_id = request.usuario["id"]
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"ok": False, "msg": "Error de conexión a BD"}), 500
+    try:
+        cursor = get_cursor_dict(conn)
+        # Verifica que la reserva existe y pertenece al cliente
+        cursor.execute("SELECT id, cliente_id, cancha_id, fecha, hora_inicio, duracion_horas, estado FROM reservas WHERE id=%s", (reserva_id,))
+        reserva = cursor.fetchone()
+        if not reserva:
+            return jsonify({"ok": False, "msg": "Reserva no encontrada"}), 404
+        if reserva["cliente_id"] != cliente_id:
+            return jsonify({"ok": False, "msg": "No puedes modificar reservas de otro cliente"}), 403
+        if reserva["estado"] == nuevo_estado:
+            return jsonify({"ok": False, "msg": f"La reserva ya está en estado '{nuevo_estado}'"}), 400
+
+        # Si va a Confirmar una Cancelada, verificar solapamiento con otras Confirmadas/Pendientes
+        if nuevo_estado == "Confirmada" and reserva["estado"] == "Cancelada":
+            fecha_str = str(reserva["fecha"])
+            # hora_inicio puede ser timedelta
+            h_val = reserva["hora_inicio"]
+            if isinstance(h_val, timedelta):
+                total_sec = int(h_val.total_seconds())
+                h_str = f"{total_sec//3600:02d}:{(total_sec%3600)//60:02d}"
+            else:
+                h_str = str(h_val)[:5]
+            dur = float(reserva["duracion_horas"])
+            # Chequeo solapamiento excluyendo la propia reserva (que está Cancelada y no se cuenta, pero por seguridad)
+            # Re-usamos lógica: busca otras reservas no canceladas en mismo slot
+            cursor.execute("""
+                SELECT hora_inicio, duracion_horas FROM reservas
+                WHERE cancha_id=%s AND fecha=%s AND id != %s AND estado != 'Cancelada'
+            """, (reserva["cancha_id"], reserva["fecha"], reserva_id))
+            otras = cursor.fetchall()
+            h_new, m_new = map(int, h_str.split(":"))
+            start_new = h_new*60 + m_new
+            end_new = start_new + int(dur*60)
+            for o in otras:
+                t = o["hora_inicio"]
+                if isinstance(t, timedelta):
+                    start_exist = int(t.total_seconds() // 60)
+                else:
+                    h_e, m_e = map(int, str(t).split(":")[:2])
+                    start_exist = h_e*60 + m_e
+                end_exist = start_exist + int(float(o["duracion_horas"])*60)
+                if start_new < end_exist and end_new > start_exist:
+                    return jsonify({"ok": False, "msg": "No se puede confirmar: el horario ya fue tomado por otra reserva. Elige reagendar."}), 409
+
+        cursor.execute("UPDATE reservas SET estado=%s WHERE id=%s", (nuevo_estado, reserva_id))
+        conn.commit()
+        return jsonify({"ok": True, "msg": f"Reserva #{reserva_id} ahora está '{nuevo_estado}'. Cambio visible en BD y para el admin."})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"ok": False, "msg": f"Error al actualizar: {str(e)}"}), 500
+    finally:
+        conn.close()
+
 # ======================================================
 # PANEL ADMIN - SOLO ADMINISTRADORES
 # ======================================================
@@ -419,8 +507,130 @@ def admin_listar_canchas():
         cursor.execute("SELECT * FROM canchas ORDER BY id")
         canchas = cursor.fetchall()
         for c in canchas:
-            c["precio_por_hora"] = float(c["precio_por_hora"])
+            # precio puede ser None si DB no migrada
+            try:
+                c["precio_por_hora"] = float(c["precio_por_hora"]) if c["precio_por_hora"] is not None else 0
+            except:
+                c["precio_por_hora"] = 0
         return jsonify({"ok": True, "canchas": canchas})
+    finally:
+        conn.close()
+
+@app.route("/api/admin/canchas", methods=["POST"])
+@solo_admin
+def admin_crear_cancha():
+    """Crea nueva cancha - solo admin. Body: nombre, tipo, estado, precio_por_hora, descripcion, imagen_url"""
+    data = request.get_json() or {}
+    nombre = data.get("nombre", "").strip()
+    tipo = data.get("tipo", "").strip()
+    estado = data.get("estado", "Disponible").strip()
+    precio = data.get("precio_por_hora")
+    descripcion = data.get("descripcion", "").strip()
+    imagen_url = data.get("imagen_url", "").strip()
+
+    # Validaciones
+    if not nombre:
+        return jsonify({"ok": False, "msg": "Nombre es obligatorio"}), 400
+    if tipo not in ["Fútbol 5", "Fútbol 7", "Fútbol 8", "Fútbol 11"]:
+        return jsonify({"ok": False, "msg": "Tipo debe ser Fútbol 5, 7, 8 u 11"}), 400
+    if estado not in ["Disponible", "Mantenimiento"]:
+        return jsonify({"ok": False, "msg": "Estado debe ser Disponible o Mantenimiento"}), 400
+    try:
+        precio = float(precio)
+        if precio <= 0:
+            return jsonify({"ok": False, "msg": "Precio debe ser mayor a 0"}), 400
+    except:
+        return jsonify({"ok": False, "msg": "Precio debe ser numérico"}), 400
+
+    if not imagen_url:
+        imagen_url = f"https://via.placeholder.com/400x250?text={tipo.replace(' ', '+')}"
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"ok": False, "msg": "Error de conexión a BD"}), 500
+    try:
+        cursor = get_cursor_dict(conn)
+        cursor.execute("""
+            INSERT INTO canchas (nombre, tipo, estado, precio_por_hora, descripcion, imagen_url)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (nombre, tipo, estado, precio, descripcion, imagen_url))
+        conn.commit()
+        nueva_id = cursor.lastrowid
+        return jsonify({"ok": True, "msg": "Cancha creada con éxito", "id": nueva_id}), 201
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"ok": False, "msg": f"Error al crear cancha: {str(e)}"}), 500
+    finally:
+        conn.close()
+
+@app.route("/api/admin/canchas/<int:cancha_id>", methods=["PUT"])
+@solo_admin
+def admin_editar_cancha(cancha_id):
+    """
+    Edita cancha: precio, foto, descripcion, nombre, tipo, estado.
+    Se actualiza directo en BD tabla canchas y se refleja en catálogo.
+    """
+    data = request.get_json() or {}
+    # Campos editables
+    nombre = data.get("nombre", "").strip() if data.get("nombre") is not None else None
+    tipo = data.get("tipo", "").strip() if data.get("tipo") is not None else None
+    precio = data.get("precio_por_hora")
+    descripcion = data.get("descripcion", "").strip() if data.get("descripcion") is not None else None
+    imagen_url = data.get("imagen_url", "").strip() if data.get("imagen_url") is not None else None
+    estado = data.get("estado", "").strip() if data.get("estado") is not None else None
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"ok": False, "msg": "Error de conexión a BD"}), 500
+    try:
+        cursor = get_cursor_dict(conn)
+        cursor.execute("SELECT id FROM canchas WHERE id=%s", (cancha_id,))
+        if not cursor.fetchone():
+            return jsonify({"ok": False, "msg": "Cancha no encontrada"}), 404
+
+        # Validaciones
+        if precio is not None:
+            try:
+                precio = float(precio)
+                if precio <= 0:
+                    return jsonify({"ok": False, "msg": "Precio debe ser mayor a 0"}), 400
+            except:
+                return jsonify({"ok": False, "msg": "Precio debe ser numérico"}), 400
+        if tipo is not None and tipo not in ["Fútbol 5", "Fútbol 7", "Fútbol 8", "Fútbol 11"]:
+            return jsonify({"ok": False, "msg": "Tipo debe ser Fútbol 5, 7, 8 u 11"}), 400
+        if estado is not None and estado not in ["Disponible", "Mantenimiento"]:
+            return jsonify({"ok": False, "msg": "Estado debe ser Disponible o Mantenimiento"}), 400
+
+        # Construir UPDATE dinámico solo con campos enviados
+        fields = []
+        params = []
+        if nombre is not None and nombre != "":
+            fields.append("nombre=%s"); params.append(nombre)
+        if tipo is not None:
+            fields.append("tipo=%s"); params.append(tipo)
+        if precio is not None:
+            fields.append("precio_por_hora=%s"); params.append(precio)
+        if descripcion is not None:
+            fields.append("descripcion=%s"); params.append(descripcion)
+        if imagen_url is not None:
+            # permite URL vacía -> placeholder
+            if imagen_url == "":
+                imagen_url = f"https://via.placeholder.com/400x250?text={tipo or 'Cancha'}"
+            fields.append("imagen_url=%s"); params.append(imagen_url)
+        if estado is not None:
+            fields.append("estado=%s"); params.append(estado)
+
+        if not fields:
+            return jsonify({"ok": False, "msg": "No hay campos para actualizar"}), 400
+
+        params.append(cancha_id)
+        query = f"UPDATE canchas SET {', '.join(fields)} WHERE id=%s"
+        cursor.execute(query, params)
+        conn.commit()
+        return jsonify({"ok": True, "msg": f"Cancha #{cancha_id} actualizada correctamente (BD reservas_cancha.canchas)"})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"ok": False, "msg": f"Error al editar cancha: {str(e)}"}), 500
     finally:
         conn.close()
 
@@ -442,6 +652,38 @@ def admin_cambiar_estado(cancha_id):
         if cursor.rowcount == 0:
             return jsonify({"ok": False, "msg": "Cancha no encontrada"}), 404
         return jsonify({"ok": True, "msg": f"Cancha {cancha_id} ahora está en {nuevo_estado}"})
+    finally:
+        conn.close()
+
+@app.route("/api/reservas/<int:reserva_id>", methods=["DELETE"])
+@solo_cliente
+def cliente_eliminar_reserva(reserva_id):
+    """
+    Al cancelar, se BORRA la fila de BD (DELETE), no solo cambia estado.
+    Visible inmediato para admin y libera el horario.
+    """
+    cliente_id = request.usuario["id"]
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"ok": False, "msg": "Error de conexión a BD"}), 500
+    try:
+        cursor = get_cursor_dict(conn)
+        cursor.execute("SELECT cliente_id, estado FROM reservas WHERE id=%s", (reserva_id,))
+        r = cursor.fetchone()
+        if not r:
+            return jsonify({"ok": False, "msg": "Reserva no encontrada"}), 404
+        if r["cliente_id"] != cliente_id:
+            return jsonify({"ok": False, "msg": "No puedes borrar reservas de otro cliente"}), 403
+        if r["estado"] == "Confirmada":
+            # Si ya está Confirmada y bloqueada, no permitir borrar (opcional). Permitimos borrar solo si no está Confirmada bloqueada.
+            # Para cumplir 'confirmada ya no se pueda oprimir nada', bloqueamos borrado post-confirmada
+            return jsonify({"ok": False, "msg": "Reserva Confirmada: ya está bloqueada y no se puede borrar/cancelar"}), 400
+        cursor.execute("DELETE FROM reservas WHERE id=%s", (reserva_id,))
+        conn.commit()
+        return jsonify({"ok": True, "msg": f"Reserva #{reserva_id} borrada de la BD correctamente. Horario liberado."})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"ok": False, "msg": f"Error al borrar: {str(e)}"}), 500
     finally:
         conn.close()
 

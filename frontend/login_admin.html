@@ -6,8 +6,8 @@
     <title>Login Administrador - Acceso Exclusivo</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        body { background: #212529; }
-        .form-card { border-top: 4px solid var(--warning); }
+        body { background: linear-gradient(135deg, #000000 0%, #111111 40%, #052e16 100%); background-attachment: fixed; }
+        .form-card { border-top: 4px solid var(--primary); box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
     </style>
 </head>
 <body>
@@ -45,6 +45,33 @@
             <small>Si no funciona, genera hash en backend: <code>generate_password_hash('Admin123*')</code> y actualiza la BD</small>
         </div>
     </div>
+
+    <footer class="footer">
+        <div class="footer-main">
+            <div class="footer-col">
+                <h4>🔐 ACCESO ADMIN</h4>
+                <p>Zona exclusiva administradores.<br><span class="footer-badge">Requiere token administrador</span></p>
+            </div>
+            <div class="footer-col">
+                <h4>Navegación</h4>
+                <ul>
+                    <li><a href="index.html">🏟️ Catálogo público</a></li>
+                    <li><a href="login_cliente.html">🔑 Login cliente</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Sistema</h4>
+                <p>BD: <code style="color:var(--accent-light);">reservas_cancha</code><br>Tabla: <code style="color:var(--accent-light);">administradores</code></p>
+            </div>
+            <div class="footer-col">
+                <h4>Soporte</h4>
+                <p>📧 admin@canchas.com<br>📱 300-123-4567</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 Canchas Sintéticas • Login Admin seguro • <a href="index.html" style="color:var(--accent-light);">Volver al inicio</a>
+        </div>
+    </footer>
 
     <script src="js/config.js"></script>
     <script src="js/auth_admin.js"></script>

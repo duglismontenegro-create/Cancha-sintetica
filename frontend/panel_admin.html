@@ -17,14 +17,20 @@
     </nav>
 
     <div class="container">
-        <div class="hero" style="background: linear-gradient(135deg, #212529 0%, #343a40 100%);">
+        <div class="hero" style="background: linear-gradient(135deg, #000000 0%, #14532d 60%, #15803d 100%); border:1px solid rgba(255,255,255,0.12);">
             <h1>Panel de Administración</h1>
             <p>Gestiona estados de canchas (Disponible / Mantenimiento) y visualiza reservas</p>
             <small>🔒 Acceso exclusivo - Solo tokens con rol 'administrador' pueden consumir /api/admin/*</small>
+            <div style="margin-top:1rem; background:rgba(255,255,255,0.10); padding:10px 14px; border-radius:8px; font-size:0.85rem; border:1px solid rgba(255,255,255,0.18);">
+                💰 <b>Tarifas vigentes:</b> Fútbol 5: $80.000/h &nbsp;|&nbsp; Fútbol 7: $120.000/h &nbsp;|&nbsp; Fútbol 8: $150.000/h &nbsp;|&nbsp; Fútbol 11: $250.000/h &nbsp;•&nbsp; Edita precio/foto/descripción con ✏️
+            </div>
         </div>
 
         <!-- Gestión Canchas -->
-        <h2 style="margin-bottom:1rem;">🏟️ Gestión de Canchas</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+            <h2 style="margin:0;">🏟️ Gestión de Canchas</h2>
+            <button class="btn btn-success" style="width:auto; padding:0.6rem 1.2rem;" onclick="abrirModalCancha()">+ Agregar Cancha</button>
+        </div>
         <div class="table-wrap" style="margin-bottom:2rem;">
             <table>
                 <thead>
@@ -34,10 +40,11 @@
                         <th>Precio/hora</th>
                         <th>Estado actual</th>
                         <th>Cambiar estado</th>
+                        <th>Editar</th>
                     </tr>
                 </thead>
                 <tbody id="tbody-canchas">
-                    <tr><td colspan="5" style="text-align:center;">Cargando...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Cargando...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -64,10 +71,140 @@
 
         <div style="margin-top:1.5rem; background:white; padding:1rem; border-radius:8px; font-size:0.85rem; color:#555;">
             <strong>Endpoints usados por este panel (solo admin):</strong><br>
-            <code>GET /api/admin/canchas</code> • <code>PUT /api/admin/canchas/:id/estado</code> • <code>GET /api/admin/reservas</code><br>
-            Todos validan <code>Authorization: Bearer &lt;token admin&gt;</code> y rechazan tokens de clientes con 403.
+            <code>GET /api/admin/canchas</code> • <code>POST /api/admin/canchas (precio_por_hora)</code> • <code>PUT /api/admin/canchas/:id (edita precio/foto/descr)</code> • <code>PUT /api/admin/canchas/:id/estado</code> • <code>GET /api/admin/reservas (con costo_total)</code><br>
+            Todos validan <code>Authorization: Bearer &lt;token admin&gt;</code> y rechazan tokens de clientes con 403.<br>
+            <span style="color:var(--primary); font-weight:700;">💰 La columna Precio/hora y Costo muestran valores en COP. El botón ✏️ Editar actualiza BD <code>reservas_cancha.canchas</code> al instante.</span>
         </div>
     </div>
+
+    <!-- MODAL AGREGAR CANCHA -->
+    <div id="modal-cancha" class="modal-overlay">
+        <div class="modal">
+            <h3>➕ Agregar Nueva Cancha</h3>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:1rem;">La cancha se guardará en <b>reservas_cancha.canchas</b> y aparecerá en el catálogo.</p>
+            <form onsubmit="crearCancha(event)">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="cancha-nombre" required placeholder="Ej: Cancha Central">
+                </div>
+                <div class="form-group">
+                    <label>Tipo *</label>
+                    <select id="cancha-tipo" required>
+                        <option value="Fútbol 5">Fútbol 5</option>
+                        <option value="Fútbol 7">Fútbol 7</option>
+                        <option value="Fútbol 8">Fútbol 8</option>
+                        <option value="Fútbol 11">Fútbol 11</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Precio por hora (COP) *</label>
+                    <input type="number" id="cancha-precio" required min="1000" step="1000" value="80000">
+                </div>
+                <div class="form-group">
+                    <label>Estado *</label>
+                    <select id="cancha-estado" required>
+                        <option value="Disponible">Disponible</option>
+                        <option value="Mantenimiento">Mantenimiento</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="cancha-descripcion" placeholder="Ej: Grama sintética profesional, iluminación LED">
+                </div>
+                <div class="form-group">
+                    <label>Imagen URL (opcional)</label>
+                    <input type="url" id="cancha-imagen" placeholder="https://via.placeholder.com/400x250?text=Futbol+5">
+                </div>
+                <div id="cancha-msg"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="cerrarModalCancha()">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Crear Cancha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR CANCHA - Admin edita precio/foto/descripcion y se actualiza en BD -->
+    <div id="modal-editar-cancha" class="modal-overlay">
+        <div class="modal">
+            <h3>✏️ Editar Cancha <small id="editar-cancha-id" style="color:#666;"></small></h3>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:1rem;">Modifica <b>precio, foto, descripción, nombre y tipo</b>. Se guarda en <b>reservas_cancha.canchas</b> vía <code>PUT /api/admin/canchas/:id</code>.</p>
+            <form onsubmit="guardarEdicionCancha(event)">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="edit-cancha-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo *</label>
+                    <select id="edit-cancha-tipo" required>
+                        <option value="Fútbol 5">Fútbol 5</option>
+                        <option value="Fútbol 7">Fútbol 7</option>
+                        <option value="Fútbol 8">Fútbol 8</option>
+                        <option value="Fútbol 11">Fútbol 11</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Precio por hora (COP) *</label>
+                    <input type="number" id="edit-cancha-precio" required min="1000" step="1000">
+                </div>
+                <div class="form-group">
+                    <label>Estado *</label>
+                    <select id="edit-cancha-estado" required>
+                        <option value="Disponible">Disponible</option>
+                        <option value="Mantenimiento">Mantenimiento</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" id="edit-cancha-descripcion" placeholder="Descripción visible en el catálogo">
+                </div>
+                <div class="form-group">
+                    <label>Imagen URL</label>
+                    <input type="url" id="edit-cancha-imagen" placeholder="https://...">
+                    <small style="color:#666; font-size:0.75rem;">Vista previa:</small><br>
+                    <img id="edit-cancha-preview" src="" alt="preview" style="width:100%; max-height:150px; object-fit:cover; border-radius:8px; border:1px solid #ddd; margin-top:6px; display:none;" onerror="this.style.display='none'">
+                </div>
+                <div id="edit-cancha-msg"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="cerrarModalEditarCancha()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-main">
+            <div class="footer-col">
+                <h4>⚽ PANEL ADMIN</h4>
+                <p>Gestión exclusiva de canchas y reservas.<br><span class="footer-badge">🔒 Solo rol administrador</span></p>
+            </div>
+            <div class="footer-col">
+                <h4>Acciones rápidas</h4>
+                <ul>
+                    <li><a href="index.html">🏟️ Ver catálogo público</a></li>
+                    <li><a href="#" onclick="abrirModalCancha()">➕ Agregar cancha</a></li>
+                    <li><a href="#" onclick="cargarPanelAdmin()">↻ Recargar datos</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Tarifas vigentes</h4>
+                <ul>
+                    <li>Fútbol 5: $80.000/h</li>
+                    <li>Fútbol 7: $120.000/h</li>
+                    <li>Fútbol 8: $150.000/h</li>
+                    <li>Fútbol 11: $250.000/h</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Sistema</h4>
+                <p>API: <code style="color:var(--accent-light);">/api/admin/*</code><br>BD: <code style="color:var(--accent-light);">reservas_cancha</code><br>Soporte: 300-123-4567</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 Panel Admin • Canchas Sintéticas • Acceso auditado por JWT • <a href="index.html" style="color:var(--accent-light);">Volver al inicio</a>
+        </div>
+    </footer>
 
     <script src="js/config.js"></script>
     <script src="js/auth_admin.js"></script>

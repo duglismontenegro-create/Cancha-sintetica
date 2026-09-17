@@ -22,9 +22,13 @@ const API = {
     // Reservas (requiere token)
     reservas: `${API_BASE_URL}/api/reservas`,
     misReservas: `${API_BASE_URL}/api/reservas/mis-reservas`,
+    cambiarEstadoReserva: (id) => `${API_BASE_URL}/api/reservas/${id}/estado`,
+    borrarReserva: (id) => `${API_BASE_URL}/api/reservas/${id}`,
     // Admin panel
     adminCanchas: `${API_BASE_URL}/api/admin/canchas`,
+    adminCrearCancha: `${API_BASE_URL}/api/admin/canchas`,
     adminCambiarEstadoCancha: (id) => `${API_BASE_URL}/api/admin/canchas/${id}/estado`,
+    adminEditarCancha: (id) => `${API_BASE_URL}/api/admin/canchas/${id}`,
     adminReservas: `${API_BASE_URL}/api/admin/reservas`,
 };
 

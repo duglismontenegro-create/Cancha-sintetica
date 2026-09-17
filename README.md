@@ -59,7 +59,7 @@ SOURCE ../database/schema.sql
 -- Genera hash para admin (si el demo no loguea):
 python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('Admin123*'))"
 -- Luego:
-UPDATE canchas_db.administradores SET password_hash='TU_HASH' WHERE email='admin@canchas.com';
+UPDATE reservas_cancha.administradores SET password_hash='TU_HASH' WHERE email='admin@canchas.com';
 ```
 
 ### Corre Flask

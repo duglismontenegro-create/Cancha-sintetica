@@ -11,12 +11,13 @@ from config import Config
 
 def generar_token(usuario_id, email, rol):
     """Genera JWT con payload: id, email, rol, exp"""
+    now = datetime.datetime.now(datetime.timezone.utc)
     payload = {
         "id": usuario_id,
         "email": email,
         "rol": rol, # 'cliente' o 'administrador'
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=Config.JWT_EXPIRATION_HOURS),
-        "iat": datetime.datetime.utcnow()
+        "exp": now + datetime.timedelta(hours=Config.JWT_EXPIRATION_HOURS),
+        "iat": now
     }
     token = jwt.encode(payload, Config.SECRET_KEY, algorithm="HS256")
     return token

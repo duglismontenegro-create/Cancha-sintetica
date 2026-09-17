@@ -31,7 +31,7 @@ function abrirModalReserva(id, nombre, tipo, precioHora) {
     document.getElementById("reserva-fecha").value = hoy;
 
     document.getElementById("modal-cancha-nombre").textContent = `${nombre} (${tipo})`;
-    document.getElementById("modal-precio").textContent = `$${Number(precioHora).toLocaleString('es-CO')} / hora`;
+    document.getElementById("modal-precio").innerHTML = `<span style="background:#dcfce7; border:1px solid #86efac; padding:4px 10px; border-radius:20px; font-weight:800; color:#14532d;">$${Number(precioHora).toLocaleString('es-CO')} COP / hora</span> <small style="color:#52525b;">• Se calcula total según duración</small>`;
 
     // Limpia mensajes previos
     document.getElementById("reserva-msg").innerHTML = "";
@@ -39,6 +39,8 @@ function abrirModalReserva(id, nombre, tipo, precioHora) {
     document.getElementById("form-reserva").style.display = "block";
     document.getElementById("reserva-hora").value = "18:00";
     document.getElementById("reserva-duracion").value = "1";
+    // Mostrar costo estimado inicial
+    setTimeout(actualizarCostoEstimado, 0);
 
     document.getElementById("modal-reserva").classList.add("open");
 }
@@ -52,7 +54,8 @@ function actualizarCostoEstimado() {
     if (!canchaSeleccionada) return;
     const dur = parseFloat(document.getElementById("reserva-duracion").value) || 0;
     const total = canchaSeleccionada.precioHora * dur;
-    document.getElementById("costo-estimado").textContent = `$${total.toLocaleString('es-CO')} COP`;
+    const precioHoraFmt = Number(canchaSeleccionada.precioHora).toLocaleString('es-CO');
+    document.getElementById("costo-estimado").innerHTML = `$${total.toLocaleString('es-CO')} COP <small style="color:#666; font-weight:400;">($${precioHoraFmt} × ${dur}h)</small>`;
 }
 
 // Listeners para costo dinámico
@@ -119,6 +122,8 @@ function mostrarResumenReserva(data) {
 
     // Formatea hora de llegada recomendada (15 min antes)
     // data.tiempo_llegada ya viene del backend
+    const precioHoraFmt = Number(r.precio_por_hora).toLocaleString('es-CO');
+    const costoFmt = Number(r.costo_total).toLocaleString('es-CO');
 
     box.innerHTML = `
         <div style="text-align:center; margin-bottom:1rem;">
@@ -132,7 +137,10 @@ function mostrarResumenReserva(data) {
             <b>Cancha:</b> ${r.cancha} (${r.tipo})<br>
             <b>Fecha:</b> ${r.fecha}<br>
             <b>Horario:</b> ${r.hora_inicio} → ${r.hora_fin} (${r.duracion_horas} hora(s))<br>
-            <b>Costo estimado:</b> $${Number(r.costo_total).toLocaleString('es-CO')} COP<br>
+            <b>Precio por hora:</b> $${precioHoraFmt} COP<br>
+            <b>Duración:</b> ${r.duracion_horas}h<br>
+            <b style="font-size:1.05rem; color:var(--primary);">💰 Costo total: $${costoFmt} COP</b><br>
+            <small style="background:#dcfce7; border:1px solid #86efac; padding:2px 6px; border-radius:4px; color:#14532d;">Cálculo: $${precioHoraFmt} × ${r.duracion_horas}h = $${costoFmt}</small><br>
             <em style="font-size:0.85rem; color:#555;">${data.resumen}</em>
         </div>
 

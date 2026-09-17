@@ -1,50 +1,70 @@
-/* style.css - Estilos globales Canchas Sintéticas */
+/* style.css - Estilos globales Canchas Sintéticas | PALETA FÚTBOL: VERDE / BLANCO / NEGRO */
 :root {
-  --primary: #0d6efd;
-  --success: #198754;
-  --warning: #ffc107;
-  --danger: #dc3545;
-  --dark: #212529;
-  --light: #f8f9fa;
-  --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  --primary: #15803d;        /* verde cancha principal */
+  --primary-hover: #166534;  /* verde oscuro hover */
+  --accent: #22c55e;         /* verde brillante acento */
+  --accent-light: #86efac;   /* verde claro */
+  --success: #15803d;
+  --warning: #eab308;
+  --danger: #dc2626;
+  --dark: #0a0a0a;            /* negro */
+  --dark-light: #1f1f1f;      /* negro grisáceo */
+  --light: #ffffff;
+  --card-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  --card-shadow-hover: 0 14px 36px rgba(21,128,61,0.14);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f4f6f9;
-  color: #333;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 35%, #f7fee7 70%, #dcfce7 100%);
+  background-attachment: fixed;
+  color: #171717;
+  min-height: 100vh;
 }
 .navbar {
-  background: var(--dark);
+  background: linear-gradient(90deg, #000000 0%, #111111 40%, #14532d 100%);
   color: white;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: sticky; top: 0; z-index: 100;
+  border-bottom: 3px solid var(--accent);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
 }
-.navbar a { color: white; text-decoration: none; margin-left: 1rem; font-weight: 500; }
-.navbar a:hover { color: var(--warning); }
-.logo { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px; }
+.navbar a { color: white; text-decoration: none; margin-left: 1rem; font-weight: 600; transition: color 0.2s; }
+.navbar a:hover { color: var(--accent-light); }
+.logo { font-size: 1.45rem; font-weight: 900; letter-spacing: 0.6px; text-shadow: 0 2px 10px rgba(34,197,94,0.35); }
+.logo::before { content:"●"; color: var(--accent); margin-right:6px; }
 .badge-rol {
-  background: var(--warning); color: var(--dark);
-  padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;
+  background: var(--accent); color: var(--dark);
+  padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px; font-weight:700;
 }
 .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
 .hero {
-  background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-  color: white; padding: 2.5rem 2rem; border-radius: 16px; margin-bottom: 2rem;
+  background: linear-gradient(135deg, #052e16 0%, #14532d 35%, #15803d 65%, #22c55e 100%);
+  color: white; padding: 2.9rem 2rem; border-radius: 18px; margin-bottom: 2rem;
   text-align: center;
+  box-shadow: 0 14px 42px rgba(5,46,22,0.35);
+  border: 1px solid rgba(255,255,255,0.12);
+  position: relative; overflow: hidden;
 }
-.hero h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-.hero p { opacity: 0.9; }
+.hero::before {
+  content:""; position:absolute; inset:0;
+  background: radial-gradient(circle at 18% 30%, rgba(255,255,255,0.09) 0%, transparent 45%),
+              radial-gradient(circle at 85% 85%, rgba(0,0,0,0.18) 0%, transparent 45%),
+              linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+  pointer-events:none;
+}
+.hero h1 { font-size: 2.2rem; margin-bottom: 0.5rem; position:relative; text-shadow: 0 2px 14px rgba(0,0,0,0.35); letter-spacing:0.3px; }
+.hero p { opacity: 0.96; position:relative; }
 
 .filters { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .filters button {
   padding: 0.6rem 1.2rem; border: 1px solid #ddd; background: white;
   border-radius: 20px; cursor: pointer; transition: 0.2s;
 }
-.filters button.active, .filters button:hover { background: var(--primary); color: white; border-color: var(--primary); }
+.filters button.active, .filters button:hover { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(21,128,61,0.25); }
 
 .grid {
   display: grid;
@@ -52,48 +72,67 @@ body {
   gap: 1.5rem;
 }
 .card {
-  background: white; border-radius: 14px; overflow: hidden;
-  box-shadow: var(--card-shadow); transition: transform 0.2s;
+  background: white; border-radius: 16px; overflow: hidden;
+  box-shadow: var(--card-shadow); transition: all 0.25s ease;
   display: flex; flex-direction: column;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-top: 3px solid transparent;
 }
-.card:hover { transform: translateY(-4px); }
+.card:hover { transform: translateY(-6px); box-shadow: var(--card-shadow-hover); border-top-color: var(--accent); border-color: rgba(34,197,94,0.18); }
 .card img { width: 100%; height: 180px; object-fit: cover; }
 .card-body { padding: 1.2rem; flex: 1; display: flex; flex-direction: column; }
-.card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.3rem; }
-.card-tipo { font-size: 0.85rem; color: #666; margin-bottom: 0.8rem; }
+.card-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 0.3rem; color: var(--dark); }
+.card-tipo { font-size: 0.85rem; color: #52525b; margin-bottom: 0.8rem; }
 .badges { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
 .badge {
   padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;
 }
 .badge-disponible { background: #d1e7dd; color: #0f5132; }
 .badge-mantenimiento { background: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
-.precio { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 0.6rem; }
+.precio { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 0.6rem; display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; }
+.precio-valor { background: #dcfce7; border: 1px solid #86efac; padding: 4px 10px; border-radius: 20px; font-size:1.15rem; color: #14532d; }
+.precio-unidad { font-size:0.85rem; font-weight:600; color:#52525b; }
 .desc { font-size: 0.85rem; color: #555; margin-bottom: 1rem; flex: 1; }
+
+/* Banner de Precios Oficial - verde fútbol */
+.pricing-banner { background:white; border-radius:16px; padding:1.6rem; box-shadow:var(--card-shadow); margin-bottom:1.8rem; border-left:5px solid var(--primary); border-top:1px solid rgba(34,197,94,0.18); }
+.pricing-banner h3 { margin-bottom:0.8rem; color:var(--dark); display:flex; align-items:center; gap:8px; font-weight:800; }
+.pricing-table { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:1rem; margin-top:1rem; }
+.pricing-item { background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%); border:1px solid #dcfce7; border-radius:12px; padding:1rem; text-align:center; transition:0.25s; }
+.pricing-item:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow: 0 8px 20px rgba(21,128,61,0.14); background:white; }
+.pricing-item .tipo { font-weight:800; color:var(--dark); font-size:0.95rem; }
+.pricing-item .precio-big { font-size:1.4rem; font-weight:900; color:var(--primary); margin:6px 0; }
+.pricing-item .detalle { font-size:0.75rem; color:#52525b; }
+.pricing-nota { font-size:0.8rem; color:#334155; margin-top:1rem; text-align:center; background: linear-gradient(90deg, #f0fdf4 0%, #dcfce7 100%); padding:10px; border-radius:8px; border:1px solid #86efac; }
 
 .btn {
   padding: 0.7rem 1rem; border: none; border-radius: 8px; cursor: pointer;
   font-weight: 700; transition: 0.2s; width: 100%;
 }
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: #0b5ed7; }
-.btn-disabled { background: #adb5bd; color: white; cursor: not-allowed; }
-.btn-outline { background: white; border: 1px solid var(--primary); color: var(--primary); }
+.btn-primary { background: var(--primary); color: white; border: 1px solid var(--primary); }
+.btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.btn-disabled { background: #a1a1aa; color: white; cursor: not-allowed; }
+.btn-outline { background: white; border: 2px solid var(--primary); color: var(--primary); }
 .btn-outline:hover { background: var(--primary); color: white; }
-.btn-success { background: var(--success); color: white; }
-.btn-danger { background: var(--danger); color: white; }
+.btn-success { background: var(--success); color: white; border: 1px solid var(--success); }
+.btn-success:hover { background: #166534; }
+.btn-danger { background: #18181b; color: white; border: 1px solid #18181b; }
+.btn-danger:hover { background: #000000; }
 
-/* Formularios */
+/* Formularios - verde/blanco/negro */
 .form-card {
   background: white; max-width: 420px; margin: 3rem auto; padding: 2rem;
-  border-radius: 14px; box-shadow: var(--card-shadow);
+  border-radius: 16px; box-shadow: 0 14px 36px rgba(0,0,0,0.12);
+  border: 1px solid rgba(21,128,61,0.12);
+  border-top: 4px solid var(--primary);
 }
-.form-card h2 { margin-bottom: 1.2rem; text-align: center; }
+.form-card h2 { margin-bottom: 1.2rem; text-align: center; color: var(--dark); font-weight:800; }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; }
 .form-group input, .form-group select {
   width: 100%; padding: 0.7rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem;
 }
-.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
 .link { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
 .link a { color: var(--primary); text-decoration: none; font-weight: 600; }
 .alert {
@@ -122,12 +161,43 @@ body {
 }
 .resumen-box strong { color: var(--primary); }
 
-/* Admin tabla */
-.table-wrap { background: white; border-radius: 14px; overflow: hidden; box-shadow: var(--card-shadow); }
+/* Admin tabla - cabecera verde/negro */
+.table-wrap { background: white; border-radius: 14px; overflow: hidden; box-shadow: var(--card-shadow); border: 1px solid rgba(0,0,0,0.06); }
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: 0.9rem 1rem; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-th { background: #f8f9fa; font-weight: 700; }
-tr:hover { background: #fcfcfc; }
-select.estado-select { padding: 0.4rem; border-radius: 6px; border: 1px solid #ddd; }
+th, td { padding: 0.9rem 1rem; text-align: left; border-bottom: 1px solid #f0fdf4; font-size: 0.9rem; }
+th { background: linear-gradient(90deg, #052e16 0%, #14532d 100%); font-weight: 800; color: white; border-bottom: 2px solid #15803d; letter-spacing:0.2px; }
+tr:hover { background: #f0fdf4; }
+select.estado-select { padding: 0.4rem; border-radius: 6px; border: 1px solid #a7f3d0; background:white; }
 
-.footer { text-align: center; padding: 2rem; color: #777; font-size: 0.85rem; }
+/* Mis Reservas cards */
+.mis-reserva-card { background:white; border:1px solid #e9ecef; border-radius:10px; padding:1rem; margin-bottom:0.9rem; box-shadow:0 2px 6px rgba(0,0,0,0.04); }
+.mis-reserva-card .row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; }
+.mis-reserva-card .info { font-size:0.88rem; line-height:1.5; flex:1; min-width:200px; }
+.mis-reserva-actions { display:flex; gap:0.5rem; margin-top:0.8rem; }
+.mis-reserva-actions .btn { padding:0.5rem 0.8rem; font-size:0.85rem; width:auto; flex:1; }
+.badge-pendiente { background:#fff3cd; color:#664d03; border:1px solid #ffecb5; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700; }
+.badge-cancelada { background:#f8d7da; color:#842029; border:1px solid #f5c2c7; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700; }
+
+/* FOOTER DISEÑO NUEVO - verde/blanco/negro, visible en todas las páginas */
+.footer {
+  background: linear-gradient(90deg, #000000 0%, #111111 45%, #052e16 100%);
+  color: #d6d3d1;
+  padding: 0;
+  margin-top: 3rem;
+  border-top: 3px solid var(--accent);
+  font-size: 0.85rem;
+}
+.footer-main {
+  max-width: 1200px; margin: 0 auto; padding: 2.2rem 1rem 1.5rem;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem;
+}
+.footer-col h4 { color: white; font-size: 1rem; margin-bottom: 0.8rem; font-weight:800; letter-spacing:0.4px; border-left:3px solid var(--accent); padding-left:8px; }
+.footer-col p, .footer-col a, .footer-col li { color: #a8a29e; font-size: 0.85rem; line-height: 1.6; text-decoration:none; list-style:none; }
+.footer-col a:hover { color: var(--accent-light); }
+.footer-col ul { padding:0; }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  text-align:center; padding: 1rem; color: #78716c; font-size: 0.8rem;
+  background: rgba(0,0,0,0.35);
+}
+.footer-badge { display:inline-block; background: rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.35); color: var(--accent-light); padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:700; margin-top:0.6rem; }

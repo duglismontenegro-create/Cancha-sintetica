@@ -25,7 +25,41 @@
         <div class="hero">
             <h1>Reserva tu cancha en segundos</h1>
             <p>Fútbol 5, 7, 8 y 11 • Grama sintética profesional • Iluminación LED • ¡Reserva 24/7!</p>
+            <p style="margin-top:0.6rem; font-size:1.05rem; font-weight:700; background:rgba(255,255,255,0.18); display:inline-block; padding:6px 14px; border-radius:20px; border:1px solid rgba(255,255,255,0.3);">💰 Desde $80.000 COP / hora • Precios oficiales abajo</p>
             <p style="margin-top:0.8rem; font-size:0.85rem; opacity:0.8;">🔒 Debes iniciar sesión como Cliente para poder reservar</p>
+        </div>
+
+        <!-- BANNER PRECIOS OFICIALES - Visible en pagina principal -->
+        <div class="pricing-banner">
+            <h3>💰 Tarifas Oficiales por Hora (COP)</h3>
+            <p style="font-size:0.88rem; color:#555;">Precios fijos por tipo de cancha. El costo total se calcula automáticamente según la duración que elijas (0.5h a 4h). Sin cargos ocultos.</p>
+            <div class="pricing-table">
+                <div class="pricing-item">
+                    <div class="tipo">⚽ Fútbol 5</div>
+                    <div class="precio-big">$80.000</div>
+                    <div class="detalle">por hora • Ideal 10 jugadores</div>
+                    <small style="color:var(--success); font-weight:700;">Más económica</small>
+                </div>
+                <div class="pricing-item">
+                    <div class="tipo">⚽ Fútbol 7</div>
+                    <div class="precio-big">$120.000</div>
+                    <div class="detalle">por hora • Ideal 14 jugadores</div>
+                </div>
+                <div class="pricing-item">
+                    <div class="tipo">⚽ Fútbol 8</div>
+                    <div class="precio-big">$150.000</div>
+                    <div class="detalle">por hora • Con camerinos</div>
+                </div>
+                <div class="pricing-item" style="border-color:var(--primary); background:#e7f1ff;">
+                    <div class="tipo">🏟️ Fútbol 11</div>
+                    <div class="precio-big">$250.000</div>
+                    <div class="detalle">por hora • Reglamentaria + graderías</div>
+                    <small style="color:var(--primary); font-weight:700;">Cancha Principal</small>
+                </div>
+            </div>
+            <div class="pricing-nota">
+                📌 <b>Ejemplo:</b> Fútbol 5 x 1.5 horas = $80.000 × 1.5 = <b>$120.000 COP</b> &nbsp;|&nbsp; Fútbol 11 x 2 horas = $250.000 × 2 = <b>$500.000 COP</b> &nbsp;•&nbsp; Pago por Nequi/Bancolombia 300-123-4567 o en recepción
+            </div>
         </div>
 
         <!-- FILTROS -->
@@ -73,8 +107,10 @@
                         <option value="2">2 horas</option>
                         <option value="2.5">2.5 horas</option>
                         <option value="3">3 horas</option>
+                        <option value="3.5">3.5 horas</option>
+                        <option value="4">4 horas</option>
                     </select>
-                    <small style="color:#666;">Costo estimado: <b id="costo-estimado">-</b></small>
+                    <small style="color:#666; display:block; margin-top:6px; background:#f8f9fa; padding:6px 8px; border-radius:6px; border:1px solid #e9ecef;">💰 Costo estimado: <b id="costo-estimado" style="color:var(--primary);">-</b></small>
                 </div>
 
                 <div id="reserva-msg"></div>
@@ -92,9 +128,56 @@
         </div>
     </div>
 
-    <div class="footer">
-        © 2026 Canchas Sintéticas • Sistema de Reservas • <a href="login_admin.html">Acceso Admin</a>
+    <!-- MODAL MIS RESERVAS - Cliente ve su historial con 2 botones Confirmar/Cancelar sincronizados a BD -->
+    <div id="modal-mis-reservas" class="modal-overlay">
+        <div class="modal" style="max-width:680px;">
+            <h3>📅 Mis Reservas</h3>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:1rem;">Aquí puedes <b>Confirmar</b> o <b>Cancelar</b> tus reservas. El cambio se guarda al instante en la BD y lo ve el admin en <code>/api/admin/reservas</code>.</p>
+            <div id="mis-reservas-lista">
+                <p style="text-align:center; padding:1rem;">Cargando...</p>
+            </div>
+            <div id="mis-reservas-msg" style="margin-top:1rem;"></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="cerrarModalMisReservas()">Cerrar</button>
+                <button class="btn btn-primary" onclick="verMisReservas()">↻ Recargar</button>
+            </div>
+        </div>
     </div>
+
+    <footer class="footer">
+        <div class="footer-main">
+            <div class="footer-col">
+                <h4>⚽ CANCHAS SINTÉTICAS</h4>
+                <p>Sistema profesional de reservas 24/7.<br>Grama sintética, iluminación LED, camerinos y graderías.</p>
+                <span class="footer-badge">💰 Desde $80.000 COP / hora</span>
+            </div>
+            <div class="footer-col">
+                <h4>Tarifas (COP/hora)</h4>
+                <ul>
+                    <li>⚽ Fútbol 5 — <b>$80.000</b></li>
+                    <li>⚽ Fútbol 7 — <b>$120.000</b></li>
+                    <li>⚽ Fútbol 8 — <b>$150.000</b></li>
+                    <li>🏟️ Fútbol 11 — <b>$250.000</b></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Navegación</h4>
+                <ul>
+                    <li><a href="index.html">🏟️ Ver canchas</a></li>
+                    <li><a href="registro_cliente.html">📝 Crear cuenta cliente</a></li>
+                    <li><a href="login_cliente.html">🔑 Login cliente</a></li>
+                    <li><a href="login_admin.html">🔐 Acceso admin</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contacto & Pagos</h4>
+                <p>📱 Nequi / Bancolombia<br><b style="color:white;">300-123-4567</b><br>📍 Recepción directa<br>⏰ Atención 6am - 11pm<br><small>Envía comprobante al WhatsApp</small></p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 Canchas Sintéticas • Sistema de Reservas • Hecho con  💚 para futboleros • <a href="login_admin.html" style="color:var(--accent-light);">Acceso Admin</a>
+        </div>
+    </footer>
 
     <!-- SCRIPTS - Orden importante -->
     <script src="js/config.js"></script>      <!-- 1. Config API_BASE_URL -->

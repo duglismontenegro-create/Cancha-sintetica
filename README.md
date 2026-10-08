@@ -359,3 +359,39 @@ git push origin main
 ```
 Siempre desde `Cancha-sintetica/` (no desde `CANCHA/` padre).
 
+
+## 1. Backend → endpoints (ubicación por rutas en app.py/auth.py)
+
+- **app.py** (ackend/app.py):
+  - @app.route('/') GET / → line 107-119
+  - Registro cliente POST /api/clientes/registro → line 122-167
+  - Login cliente POST /api/clientes/login → line 170-197
+  - Login admin POST /api/admin/login → line 200-231
+  - Listar canchas GET /api/canchas → line 238-266
+  - Detalle cancha GET /api/canchas/<int:cancha_id> → line 268-282
+  - Crear reserva POST /api/reservas → line 288-394 (decorado @solo_cliente auth.py:50). Helpers hay_solapamiento_reserva() 62-101, calcular_hora_fin() 55-60
+  - Mis reservas GET /api/reservas/mis-reservas → line 396-423
+  - Cambiar estado reserva cliente PUT /api/reservas/<int:reserva_id>/estado → line 425-493
+  - Eliminar reserva cliente DELETE /api/reservas/<int:reserva_id> → line 658-688
+  - Admin: listar canchas GET /api/admin/canchas → line 499-517 (@solo_admin)
+  - Admin: crear cancha POST /api/admin/canchas → line 519-564
+  - Admin: editar cancha PUT /api/admin/canchas/<int:cancha_id> → line 566-635
+  - Admin: cambiar estado cancha PUT /api/admin/canchas/<int:cancha_id>/estado → line 637-656
+  - Admin: listar reservas GET /api/admin/reservas → line 690-716
+  - Admin: cambiar estado reserva PUT /api/admin/reservas/<int:reserva_id>/estado → line 718-736
+
+- **auth.py** (ackend/auth.py): generar_token 12-23, decodificar_token 25-32, @token_requerido 34-48, @solo_cliente 50-58, @solo_admin 60-68
+
+- **database.py** (ackend/database.py): get_db_connection 9-23, get_cursor_dict 25-27, ensure_db_compatible 29-136
+
+- **config.py** (ackend/config.py): env + TIEMPO_LLEGADA_ANTICIPADA_MIN, PAYMENT_INSTRUCTIONS, JWT 10-27
+
+## 2. Frontend → Backend (conexiones HTTP por archivo/línea)
+
+- **config.js** (rontend/js/config.js): API_BASE_URL 10; registro/login/canchas/reservas/admin endpoints 15-33; Token/authHeaders 36-58
+- **auth_cliente.js** (19-23 registro, 52-56 login) → /api/clientes/*
+- **auth_admin.js** (17-21 login, protegerPanelAdmin 51-58) → /api/admin/login
+- **canchas.js** (18-23 GET /api/canchas, 128 GET mis-reservas, 202-206 PUT estado, 226-229 DELETE reserva)
+- **reserva.js** (90-99 POST /api/reservas con authHeaders)
+- **admin.js** (22 GET adminCanchas, 74-78 PUT estado cancha, 96 GET adminReservas, 162-166 POST crear, 229-233 PUT editar)
+
